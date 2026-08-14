@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CAIT RPM Consent v4.0</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --page-width: 816px;
+      --page-height: 1056px;
+      --ink: #111;
+      --line: #8a8a8a;
+      --bar: #050505;
+      --paper: #fff;
+      --screen: #e9e9e9;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--screen);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-text-size-adjust: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    #consent-form {
+      width: 100%;
+      max-width: 100%;
+      min-height: auto;
+      background: var(--paper);
+      padding: 16px 16px 80px 16px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    /* ---------- Header ---------- */
+
+    .title {
+      margin: 0 0 15px 0;
+      text-align: center;
+      font-size: 21px;
+      line-height: 1.12;
+      font-weight: 700;
+    }
+
+    .intro {
+      margin: 0 0 17px 0;
+      font-size: 12.4px;
+      line-height: 1.16;
+      font-weight: 400;
+    }
+
+    .intro strong {
+      font-weight: 700;
+    }
+
+    /* ---------- Section bars ---------- */
+
+    .section-bar {
+      height: 24px;
+      display: grid;
+      grid-template-columns: 49px 1fr;
+      align-items: center;
+      background: var(--bar);
+      color: #fff;
+      margin: 0;
+    }
+
+    .section-number {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      padding-left: 9px;
+      border-right: 1px solid #fff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .section-title {
+      padding-left: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1px;
+    }
+
+    /* ---------- Patient information ---------- */
+
+    .patient-grid {
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 3fr 1.75fr 1.75fr;
+    }
+
+    .patient-grid .field {
+      min-height: 42px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .patient-grid .field:nth-child(3) {
+      border-right: 0;
+    }
+
+    .patient-grid .field:nth-child(n+4) {
+      border-bottom: 0;
+    }
+
+    .patient-grid .field:nth-child(4) {
+      grid-column: 1 / span 2;
+    }
+
+    .patient-grid .field:nth-child(5) {
+      grid-column: 3;
+      border-right: 0;
+    }
+
+    .field-label {
+      display: block;
+      padding: 5px 6px 0 6px;
+      font-size: 9.5px;
+      line-height: 1;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .field-label.optional {
+      font-weight: 400;
+    }
+
+    .field-input {
+      width: calc(100% - 12px);
+      height: 25px;
+      margin: 0 6px 2px 6px;
+      padding: 4px 2px 1px 2px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    /* ---------- Agreement ---------- */
+
+    .agreement-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .agreement-column {
+      min-width: 0;
+    }
+
+    .agreement-column:first-child {
+      border-right: 1px solid var(--line);
+    }
+
+    .agreement-cell {
+      padding: 8px 10px 5px 10px;
+      font-size: 12px;
+      line-height: 1.18;
+    }
+
+    .agreement-cell p {
+      margin: 0 0 12px 0;
+    }
+
+    .agreement-cell p:last-child {
+      margin-bottom: 2px;
+    }
+
+    .check {
+      font-weight: 700;
+      font-size: 13px;
+      margin-right: 4px;
+    }
+
+    .agreement-cell strong {
+      font-weight: 700;
+    }
+
+    /* ---------- Lower agreement row ---------- */
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .lower-cell {
+      min-height: 198px;
+      padding: 8px 10px 4px 10px;
+      font-size: 12px;
+      line-height: 1.18;
+    }
+
+    .lower-cell:first-child {
+      border-right: 1px solid var(--line);
+    }
+
+    .lower-cell p {
+      margin: 0 0 13px 0;
+    }
+
+    .lower-cell p:last-child {
+      margin-bottom: 0;
+    }
+
+    .emergency {
+      font-weight: 700;
+    }
+
+    .emergency .warning {
+      font-size: 14px;
+      margin-right: 4px;
+    }
+
+    /* ---------- Signature ---------- */
+
+    .signature-section {
+      margin-top: 16px;
+    }
+
+    .signing-statement {
+      margin: 0 0 6px 0;
+      font-size: 11px;
+      line-height: 1.15;
+    }
+
+    .signing-statement strong {
+      font-weight: 700;
+    }
+
+    .signing-statement em {
+      font-style: italic;
+    }
+
+    .signature-grid {
+      display: grid;
+      grid-template-columns: 1.65fr .75fr 1.65fr;
+      border: 1px solid var(--line);
+      height: 67px;
+    }
+
+    .signature-cell {
+      position: relative;
+      border-right: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .signature-cell:last-child {
+      border-right: 0;
+    }
+
+    .signature-label {
+      display: block;
+      padding: 5px 6px 0 6px;
+      font-size: 9px;
+      line-height: 1.05;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .signature-label .light {
+      font-weight: 400;
+    }
+
+    .signature-canvas-wrap {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: 3px;
+      height: 37px;
+    }
+
+    #signatureCanvas {
+      width: 100%;
+      height: 37px;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .date-input {
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      bottom: 6px;
+      height: 21px;
+      border: 0;
+      border-bottom: 1px solid #555;
+      outline: 0;
+      background: transparent;
+      text-align: center;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+    }
+
+    .caregiver-input {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: 5px;
+      height: 23px;
+      border: 0;
+      border-bottom: 1px solid #555;
+      outline: 0;
+      background: transparent;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+    }
+
+    /* ---------- Footer ---------- */
+
+    .footer {
+      height: 19px;
+      display: grid;
+      grid-template-columns: 1.05fr .95fr 1.15fr 4.15fr 1.3fr;
+      align-items: end;
+      column-gap: 7px;
+      padding-top: 4px;
+      color: #555;
+      font-size: 7.5px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .footer span:nth-child(2),
+    .footer span:nth-child(3),
+    .footer span:nth-child(5) {
+      text-align: center;
+    }
+
+    .footer span:nth-child(4) {
+      text-align: center;
+    }
+
+    /* ---------- RN / capture support ---------- */
+
+    #capture-button {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 100;
+      border: 0;
+      border-radius: 7px;
+      padding: 10px 14px;
+      background: #111;
+      color: #fff;
+      font: 600 13px Arial, Helvetica, sans-serif;
+    }
+
+    .capture-mode {
+      background: #fff !important;
+    }
+
+    .capture-mode .page-wrap,
+    .capture-mode #consent-form {
+      width: 100% !important;
+      max-width: 100% !important;
+      background: #fff !important;
+      padding: 16px 16px 30px 16px !important;
+    }
+
+    .capture-mode #capture-button {
+      display: none !important;
+    }
+
+    @media print {
+      html, body {
+        background: #fff;
+      }
+
+      body {
+        min-width: 0;
+      }
+
+      .page-wrap,
+      #consent-form {
+        width: 8.5in;
+        min-height: 11in;
+        height: 11in;
+      }
+
+      #capture-button {
+        display: none !important;
+      }
+
+      @page {
+        size: Letter;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page-wrap">
+    <main id="consent-form">
+
+      <h1 class="title">
+        Remote Patient Monitoring, Behavioral Health Integration<br>
+        &amp; Principal Care Management Consent Form
+      </h1>
+
+      <p class="intro">
+        <strong>What is this form?</strong>
+        There is a Dozee sensor mat under your mattress that checks you heart rate, breathing, and bed
+        occupancy, without touching you while you are laying in bed. As days of data are collected, a CAIT nurse will review
+        your trends and call you, your family, and/or your caregivers with a report at least once a month.
+      </p>
+
+      <section>
+        <div class="section-bar">
+          <div class="section-number">01</div>
+          <div class="section-title">PATIENT INFORMATION</div>
+        </div>
+
+        <div class="patient-grid">
+
+          <div class="field">
+            <label class="field-label">*PATIENT NAME</label>
+            <input id="patientName" class="field-input" autocomplete="name" />
+          </div>
+
+          <div class="field">
+            <label class="field-label">*DATE OF BIRTH</label>
+            <input id="dob" class="field-input" type="text" inputmode="numeric" placeholder="" />
+          </div>
+
+          <div class="field">
+            <label class="field-label optional">PHONE NUMBER</label>
+            <input id="phone" class="field-input" type="tel" autocomplete="tel" />
+          </div>
+
+          <div class="field">
+            <label class="field-label">*PRIMARY CARE PHYSICIAN</label>
+            <input id="pcp" class="field-input" autocomplete="name" />
+          </div>
+
+          <div class="field">
+            <label class="field-label optional">PHYSICIAN PHONE</label>
+            <input id="physicianPhone" class="field-input" type="tel" />
+          </div>
+
+        </div>
+      </section>
+
+      <section>
+        <div class="section-bar">
+          <div class="section-number">02</div>
+          <div class="section-title">THE AGREEMENT</div>
+        </div>
+
+        <div class="agreement-grid">
+
+          <div class="agreement-column">
+
+            <div class="agreement-cell">
+              <p>
+                <span class="check">✓</span>
+                <strong>CAIT will provide your RPM, BHI &amp; PCM Services.</strong>
+                CAIT Care Providers, PLLC provides your RPM, BHI, &amp; PCM services using Dozee technology.
+                This includes the contactless vital sign monitor in your room and all associated monitoring software.
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                <strong>You choose CAIT as your RPM, BHI, &amp; PCM provider.</strong>
+                No other providers will be able to bill for the same services at the same time.
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                <strong>You may owe a copay.</strong>
+                Medicare Part B will be billed, and they may require a copay that will be billed to your mailing address.
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                <strong>Medicare cost-sharing</strong> may apply to both in-person and non-face-to-face services,
+                even if a supplemental insurer covers my share.
+              </p>
+            </div>
+
+          </div>
+
+          <div class="agreement-column">
+
+            <div class="agreement-cell">
+              <p>
+                <span class="check">✓</span>
+                <strong>You allow CAIT to share records with your insurance.</strong>
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                <strong>Your insurance pays CAIT directly.</strong>
+                Medicare or your health plan sends payments to CAIT.
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                <strong>You may opt out at any time.</strong>
+                We just ask that you make a written notification of you wish to unenroll in
+                RPM, BHI, &amp; PCM for our records.
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                <strong>CAIT may use a contracted group.</strong>
+                Another licensed medical group may help provide services on CAIT's behalf.
+              </p>
+
+              <p>
+                <span class="check">✓</span>
+                I give my care team permission to consult with relevant specialists about my care,
+                including a psychiatric consultant.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="lower-grid">
+
+          <div class="lower-cell">
+            <p>
+              <span>•</span>
+              <strong>Privacy Protected.</strong>
+              CAIT follows HIPAA law, your health data is always safe and private.
+              See our notice of privacy practices for more information.
+            </p>
+
+            <p>
+              <span>•</span>
+              <strong>CAIT does not replace traditional clinical care.</strong>
+              RPM, BHI, and PCM are meant to increase monitoring, reduced inpatient visits,
+              and provide earlier detection of issues.
+            </p>
+
+            <p>
+              <span>•</span>
+              <strong>Consent renews every 12 months.</strong>
+              After 12 months of remote monitoring, CAIT will ask you to sign a new form to continue.
+            </p>
+          </div>
+
+          <div class="lower-cell">
+            <p class="emergency">
+              <span class="warning">⚠</span>
+              IN CASE OF EMERGENCIES: CALL 911.
+            </p>
+
+            <p>
+              <span>•</span>
+              RPM, BHI, &amp; PCM are not emergency services.
+            </p>
+
+            <p>
+              <span>•</span>
+              <strong>The Dozee device is owned by CAIT.</strong>
+              CAIT owns the device and is in partnership with your facility to use it for your care.
+              It must not be removed or tampered with while you are on remote services.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="signature-section">
+
+        <div class="section-bar">
+          <div class="section-number">03</div>
+          <div class="section-title">SIGNATURE</div>
+        </div>
+
+        <p class="signing-statement">
+          <strong>By signing, I am saying:</strong>
+          <em>"I have read this form, or it has been read to me, and I understand it.”</em>
+        </p>
+
+        <div class="signature-grid">
+
+          <div class="signature-cell">
+            <label class="signature-label">
+              *PATIENT / AUTHORIZED REPRESENTATIVE SIGNATURE <br>
+              <span class="light">| OR VERBAL CONSENT</span>
+            </label>
+
+            <div class="signature-canvas-wrap">
+              <canvas id="signatureCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="signature-cell">
+            <label class="signature-label">*DATE</label>
+            <input id="signatureDate" class="date-input" type="text" inputmode="numeric" />
+          </div>
+
+          <div class="signature-cell">
+            <label class="signature-label">
+              IF NOT THE PATIENT — RELATIONSHIP <br>
+              <span class="light">| OR NAME AND TITLE OF CAREGIVER</span>
+            </label>
+
+            <input id="caregiver" class="caregiver-input" />
+          </div>
+
+        </div>
+
+        <div class="footer">
+          <span>Questions?</span>
+          <span>682-207-3598</span>
+          <span>office@cait.care</span>
+          <span>600 E. Rosedale St. Suite 125, Fort Worth, TX 76104</span>
+          <span>CAIT RPM Consent v4.0</span>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <button id="capture-button" type="button">Submit</button>
+
+  <script>
+    (() => {
+      const form = document.getElementById("consent-form");
+      const submitButton = document.getElementById("capture-button");
+      const signatureCanvas = document.getElementById("signatureCanvas");
+      const ctx = signatureCanvas.getContext("2d");
+
+      let drawing = false;
+      let hasSignature = false;
+
+      function resizeSignatureCanvas() {
+        const rect = signatureCanvas.getBoundingClientRect();
+        const dpr = Math.max(window.devicePixelRatio || 1, 1);
+
+        signatureCanvas.width = Math.round(rect.width * dpr);
+        signatureCanvas.height = Math.round(rect.height * dpr);
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#111";
+      }
+
+      resizeSignatureCanvas();
+
+      function pointFromEvent(event) {
+        const rect = signatureCanvas.getBoundingClientRect();
+        const source = event.touches ? event.touches[0] : event;
+
+        return {
+          x: source.clientX - rect.left,
+          y: source.clientY - rect.top
+        };
+      }
+
+      function startDrawing(event) {
+        event.preventDefault();
+        drawing = true;
+
+        const p = pointFromEvent(event);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }
+
+      function draw(event) {
+        if (!drawing) return;
+
+        event.preventDefault();
+
+        const p = pointFromEvent(event);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        hasSignature = true;
+      }
+
+      function stopDrawing() {
+        drawing = false;
+        ctx.closePath();
+      }
+
+      signatureCanvas.addEventListener("pointerdown", startDrawing);
+      signatureCanvas.addEventListener("pointermove", draw);
+      signatureCanvas.addEventListener("pointerup", stopDrawing);
+      signatureCanvas.addEventListener("pointercancel", stopDrawing);
+      signatureCanvas.addEventListener("pointerleave", stopDrawing);
+
+      function value(id) {
+        return document.getElementById(id).value.trim();
+      }
+
+      function collectFormData() {
+        return {
+          patientName: value("patientName"),
+          dob: value("dob"),
+          phone: value("phone"),
+          primaryCarePhysician: value("pcp"),
+          physicianPhone: value("physicianPhone"),
+          signatureDate: value("signatureDate"),
+          caregiver: value("caregiver"),
+          signature: signatureCanvas.toDataURL("image/png"),
+          timestamp: new Date().toISOString()
+        };
+      }
+
+      function postMessage(message) {
+        const payload = JSON.stringify(message);
+
+        if (
+          window.ReactNativeWebView &&
+          typeof window.ReactNativeWebView.postMessage === "function"
+        ) {
+          window.ReactNativeWebView.postMessage(payload);
+        } else {
+          console.log("WebView message:", payload);
+        }
+      }
+
+      function submit() {
+        const required = [
+          ["patientName", "*PATIENT NAME"],
+          ["dob", "*DATE OF BIRTH"],
+          ["pcp", "*PRIMARY CARE PHYSICIAN"],
+          ["signatureDate", "*DATE"]
+        ];
+
+        for (const [id, label] of required) {
+          if (!value(id)) {
+            alert(`Please complete ${label}.`);
+            document.getElementById(id).focus();
+            return;
+          }
+        }
+
+        if (!hasSignature) {
+          alert("Please provide the patient / authorized representative signature.");
+          return;
+        }
+
+        postMessage({
+          type: "FORM_COMPLETED",
+          data: collectFormData(),
+          width: form.scrollWidth,
+          height: form.scrollHeight
+        });
+      }
+
+      window.prefillForm = function (data) {
+        if (!data) return;
+        if (data.patientName) document.getElementById("patientName").value = data.patientName;
+        if (data.dob) document.getElementById("dob").value = data.dob;
+        if (data.phone) document.getElementById("phone").value = data.phone;
+        if (data.pcp) document.getElementById("pcp").value = data.pcp;
+        if (data.signatureDate) document.getElementById("signatureDate").value = data.signatureDate;
+      };
+
+      /*
+       * React Native can call this with injectJavaScript():
+       * window.prepareForCapture()
+       */
+      window.prepareForCapture = function () {
+        const sigData = signatureCanvas.toDataURL("image/png");
+        document.body.classList.add("capture-mode");
+
+        const wrap = signatureCanvas.parentElement;
+        if (wrap && hasSignature && sigData) {
+          wrap.style.position = "relative";
+          let img = document.getElementById("signatureCapturedImg");
+          if (!img) {
+            img = document.createElement("img");
+            img.id = "signatureCapturedImg";
+            wrap.appendChild(img);
+          }
+          img.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none; z-index:99; background:transparent; display:block;";
+          img.onload = function () {
+            signatureCanvas.style.opacity = "0";
+            notifyCaptureReady();
+          };
+          img.onerror = function () {
+            notifyCaptureReady();
+          };
+          img.src = sigData;
+        } else {
+          notifyCaptureReady();
+        }
+
+        function notifyCaptureReady() {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const exactHeight = Math.ceil(form.getBoundingClientRect().height || form.scrollHeight) + 30;
+              postMessage({
+                type: "CAPTURE_READY",
+                width: form.scrollWidth,
+                height: exactHeight
+              });
+            });
+          });
+        }
+      };
+
+      /*
+       * React Native can call this after capture if it wants
+       * the page restored to normal editing mode.
+       */
+      window.restoreAfterCapture = function () {
+        document.body.classList.remove("capture-mode");
+        signatureCanvas.style.opacity = "1";
+        const img = document.getElementById("signatureCapturedImg");
+        if (img) img.style.display = "none";
+        postMessage({ type: "CAPTURE_RESTORED" });
+      };
+
+      submitButton.addEventListener("click", submit);
+
+      /*
+       * Also expose a native-friendly submit hook.
+       */
+      window.submitConsentForm = submit;
+
+      /*
+       * Prevent accidental native form submission/navigation.
+       */
+      document.addEventListener("submit", e => e.preventDefault());
+
+    })();
+  </script>
+
+</body>
+</html>
