@@ -315,6 +315,7 @@
       right: 6px;
       bottom: 3px;
       height: 37px;
+      cursor: pointer;
     }
 
     #signatureCanvas {
@@ -322,7 +323,6 @@
       height: 37px;
       display: block;
       touch-action: none;
-      cursor: crosshair;
     }
 
     .date-input {
@@ -379,6 +379,81 @@
       text-align: center;
     }
 
+    /* ---------- Fullscreen Signature Modal ---------- */
+    #signatureModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    #signatureModal.open {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 92%;
+      max-width: 650px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .modal-canvas-wrap {
+      width: 100%;
+      height: 220px;
+      border: 2px dashed #999;
+      border-radius: 6px;
+      position: relative;
+      background: #fafafa;
+      touch-action: none;
+    }
+
+    #modalCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 0;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-clear { background: #e0e0e0; color: #333; }
+    .btn-cancel { background: #f5f5f5; color: #666; }
+    .btn-done { background: #050505; color: #fff; }
+
     /* ---------- RN / capture support ---------- */
 
     #capture-button {
@@ -406,34 +481,17 @@
       padding: 16px 16px 30px 16px !important;
     }
 
-    .capture-mode #capture-button {
+    .capture-mode #capture-button,
+    .capture-mode #signatureModal {
       display: none !important;
     }
 
     @media print {
-      html, body {
-        background: #fff;
-      }
-
-      body {
-        min-width: 0;
-      }
-
-      .page-wrap,
-      #consent-form {
-        width: 8.5in;
-        min-height: 11in;
-        height: 11in;
-      }
-
-      #capture-button {
-        display: none !important;
-      }
-
-      @page {
-        size: Letter;
-        margin: 0;
-      }
+      html, body { background: #fff; }
+      body { min-width: 0; }
+      .page-wrap, #consent-form { width: 8.5in; min-height: 11in; height: 11in; }
+      #capture-button, #signatureModal { display: none !important; }
+      @page { size: Letter; margin: 0; }
     }
   </style>
 </head>
@@ -628,10 +686,10 @@
 
         <div class="signature-grid">
 
-          <div class="signature-cell">
+          <div class="signature-cell" id="signatureCell">
             <label class="signature-label">
               *PATIENT / AUTHORIZED REPRESENTATIVE SIGNATURE <br>
-              <span class="light">| OR VERBAL CONSENT</span>
+              <span class="light">| OR VERBAL CONSENT (Tap to sign)</span>
             </label>
 
             <div class="signature-canvas-wrap">
@@ -668,6 +726,23 @@
     </main>
   </div>
 
+  <!-- Fullscreen Signature Modal -->
+  <div id="signatureModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Draw Patient / Representative Signature</span>
+      </div>
+      <div class="modal-canvas-wrap" id="modalCanvasWrap">
+        <canvas id="modalCanvas"></canvas>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-clear" id="btnClear">Clear</button>
+        <button class="btn btn-cancel" id="btnCancel">Cancel</button>
+        <button class="btn btn-done" id="btnDone">Done</button>
+      </div>
+    </div>
+  </div>
+
   <button id="capture-button" type="button">Submit</button>
 
   <script>
@@ -677,7 +752,15 @@
       const signatureCanvas = document.getElementById("signatureCanvas");
       const ctx = signatureCanvas.getContext("2d");
 
-      let drawing = false;
+      const signatureCell = document.getElementById("signatureCell");
+      const signatureModal = document.getElementById("signatureModal");
+      const modalCanvas = document.getElementById("modalCanvas");
+      const modalCtx = modalCanvas.getContext("2d");
+      const btnClear = document.getElementById("btnClear");
+      const btnCancel = document.getElementById("btnCancel");
+      const btnDone = document.getElementById("btnDone");
+
+      let modalDrawing = false;
       let hasSignature = false;
 
       // Default signature date to today YYYY-MM-DD if blank
@@ -687,13 +770,11 @@
         sigDateEl.value = today;
       }
 
-      function resizeSignatureCanvas() {
+      function resizeFormCanvas() {
         const rect = signatureCanvas.getBoundingClientRect();
         const dpr = Math.max(window.devicePixelRatio || 1, 1);
-
         signatureCanvas.width = Math.round(rect.width * dpr);
         signatureCanvas.height = Math.round(rect.height * dpr);
-
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.lineWidth = 1.8;
         ctx.lineCap = "round";
@@ -701,49 +782,99 @@
         ctx.strokeStyle = "#111";
       }
 
-      resizeSignatureCanvas();
+      function resizeModalCanvas() {
+        const rect = modalCanvas.getBoundingClientRect();
+        const dpr = Math.max(window.devicePixelRatio || 1, 1);
+        modalCanvas.width = Math.round(rect.width * dpr);
+        modalCanvas.height = Math.round(rect.height * dpr);
+        modalCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        modalCtx.lineWidth = 2.5;
+        modalCtx.lineCap = "round";
+        modalCtx.lineJoin = "round";
+        modalCtx.strokeStyle = "#111";
+      }
 
-      function pointFromEvent(event) {
-        const rect = signatureCanvas.getBoundingClientRect();
+      resizeFormCanvas();
+
+      // Open Modal on tapping signature cell or canvas
+      signatureCell.addEventListener("click", () => {
+        signatureModal.classList.add("open");
+        setTimeout(() => {
+          resizeModalCanvas();
+          clearModalCanvas();
+          // Copy existing signature to modal if present
+          if (hasSignature) {
+            const img = new Image();
+            img.onload = () => {
+              const rect = modalCanvas.getBoundingClientRect();
+              modalCtx.drawImage(img, 0, 0, rect.width, rect.height);
+            };
+            img.src = signatureCanvas.toDataURL("image/png");
+          }
+        }, 50);
+      });
+
+      function pointFromModalEvent(event) {
+        const rect = modalCanvas.getBoundingClientRect();
         const source = event.touches ? event.touches[0] : event;
-
         return {
           x: source.clientX - rect.left,
           y: source.clientY - rect.top
         };
       }
 
-      function startDrawing(event) {
+      function startModalDrawing(event) {
         event.preventDefault();
-        drawing = true;
-
-        const p = pointFromEvent(event);
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
+        modalDrawing = true;
+        const p = pointFromModalEvent(event);
+        modalCtx.beginPath();
+        modalCtx.moveTo(p.x, p.y);
       }
 
-      function draw(event) {
-        if (!drawing) return;
-
+      function drawModal(event) {
+        if (!modalDrawing) return;
         event.preventDefault();
-
-        const p = pointFromEvent(event);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-
-        hasSignature = true;
+        const p = pointFromModalEvent(event);
+        modalCtx.lineTo(p.x, p.y);
+        modalCtx.stroke();
       }
 
-      function stopDrawing() {
-        drawing = false;
-        ctx.closePath();
+      function stopModalDrawing() {
+        modalDrawing = false;
+        modalCtx.closePath();
       }
 
-      signatureCanvas.addEventListener("pointerdown", startDrawing);
-      signatureCanvas.addEventListener("pointermove", draw);
-      signatureCanvas.addEventListener("pointerup", stopDrawing);
-      signatureCanvas.addEventListener("pointercancel", stopDrawing);
-      signatureCanvas.addEventListener("pointerleave", stopDrawing);
+      function clearModalCanvas() {
+        const rect = modalCanvas.getBoundingClientRect();
+        modalCtx.clearRect(0, 0, rect.width, rect.height);
+      }
+
+      modalCanvas.addEventListener("pointerdown", startModalDrawing);
+      modalCanvas.addEventListener("pointermove", drawModal);
+      modalCanvas.addEventListener("pointerup", stopModalDrawing);
+      modalCanvas.addEventListener("pointercancel", stopModalDrawing);
+      modalCanvas.addEventListener("pointerleave", stopModalDrawing);
+
+      btnClear.addEventListener("click", () => {
+        clearModalCanvas();
+      });
+
+      btnCancel.addEventListener("click", () => {
+        signatureModal.classList.remove("open");
+      });
+
+      btnDone.addEventListener("click", () => {
+        const rect = signatureCanvas.getBoundingClientRect();
+        ctx.clearRect(0, 0, rect.width, rect.height);
+
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, rect.width, rect.height);
+          hasSignature = true;
+          signatureModal.classList.remove("open");
+        };
+        img.src = modalCanvas.toDataURL("image/png");
+      });
 
       function value(id) {
         const el = document.getElementById(id);
@@ -775,7 +906,6 @@
 
       function postMessage(message) {
         const payload = JSON.stringify(message);
-
         if (
           window.ReactNativeWebView &&
           typeof window.ReactNativeWebView.postMessage === "function"
@@ -837,10 +967,6 @@
         if (data.caregiver) document.getElementById("caregiver").value = data.caregiver;
       };
 
-      /*
-       * React Native can call this with injectJavaScript():
-       * window.prepareForCapture()
-       */
       window.prepareForCapture = function () {
         const sigData = signatureCanvas.toDataURL("image/png");
         document.body.classList.add("capture-mode");
@@ -881,10 +1007,6 @@
         }
       };
 
-      /*
-       * React Native can call this after capture if it wants
-       * the page restored to normal editing mode.
-       */
       window.restoreAfterCapture = function () {
         document.body.classList.remove("capture-mode");
         signatureCanvas.style.opacity = "1";
@@ -894,15 +1016,7 @@
       };
 
       submitButton.addEventListener("click", submit);
-
-      /*
-       * Also expose a native-friendly submit hook.
-       */
       window.submitConsentForm = submit;
-
-      /*
-       * Prevent accidental native form submission/navigation.
-       */
       document.addEventListener("submit", e => e.preventDefault());
 
     })();
