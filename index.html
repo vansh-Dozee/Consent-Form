@@ -163,6 +163,22 @@
       line-height: 1;
     }
 
+    input[type="date"] {
+      -webkit-appearance: none;
+      appearance: none;
+      min-height: 23px;
+      background: transparent;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0.6;
+      cursor: pointer;
+    }
+
+    .capture-mode input[type="date"]::-webkit-calendar-picker-indicator {
+      display: none !important;
+    }
+
     /* ---------- Agreement ---------- */
 
     .agreement-grid {
@@ -454,7 +470,7 @@
 
           <div class="field">
             <label class="field-label">*DATE OF BIRTH</label>
-            <input id="dob" class="field-input" type="text" inputmode="numeric" placeholder="" />
+            <input id="dob" class="field-input" type="date" />
           </div>
 
           <div class="field">
@@ -625,7 +641,7 @@
 
           <div class="signature-cell">
             <label class="signature-label">*DATE</label>
-            <input id="signatureDate" class="date-input" type="text" inputmode="numeric" />
+            <input id="signatureDate" class="date-input" type="date" />
           </div>
 
           <div class="signature-cell">
@@ -663,6 +679,13 @@
 
       let drawing = false;
       let hasSignature = false;
+
+      // Default signature date to today YYYY-MM-DD if blank
+      const sigDateEl = document.getElementById("signatureDate");
+      if (sigDateEl && !sigDateEl.value) {
+        const today = new Date().toISOString().split("T")[0];
+        sigDateEl.value = today;
+      }
 
       function resizeSignatureCanvas() {
         const rect = signatureCanvas.getBoundingClientRect();
@@ -723,17 +746,27 @@
       signatureCanvas.addEventListener("pointerleave", stopDrawing);
 
       function value(id) {
-        return document.getElementById(id).value.trim();
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : "";
+      }
+
+      function formatDateForDisplay(val) {
+        if (!val) return "";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          const parts = val.split("-");
+          return `${parts[1]}/${parts[2]}/${parts[0]}`;
+        }
+        return val;
       }
 
       function collectFormData() {
         return {
           patientName: value("patientName"),
-          dob: value("dob"),
+          dob: formatDateForDisplay(value("dob")),
           phone: value("phone"),
           primaryCarePhysician: value("pcp"),
           physicianPhone: value("physicianPhone"),
-          signatureDate: value("signatureDate"),
+          signatureDate: formatDateForDisplay(value("signatureDate")),
           caregiver: value("caregiver"),
           signature: signatureCanvas.toDataURL("image/png"),
           timestamp: new Date().toISOString()
@@ -782,13 +815,26 @@
         });
       }
 
+      function setInputValue(id, val) {
+        const input = document.getElementById(id);
+        if (!input || !val) return;
+        if (input.type === "date" && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+          const parts = val.split("/");
+          input.value = `${parts[2]}-${parts[0]}-${parts[1]}`;
+        } else {
+          input.value = val;
+        }
+      }
+
       window.prefillForm = function (data) {
         if (!data) return;
         if (data.patientName) document.getElementById("patientName").value = data.patientName;
-        if (data.dob) document.getElementById("dob").value = data.dob;
+        if (data.dob) setInputValue("dob", data.dob);
         if (data.phone) document.getElementById("phone").value = data.phone;
         if (data.pcp) document.getElementById("pcp").value = data.pcp;
-        if (data.signatureDate) document.getElementById("signatureDate").value = data.signatureDate;
+        if (data.physicianPhone) document.getElementById("physicianPhone").value = data.physicianPhone;
+        if (data.signatureDate) setInputValue("signatureDate", data.signatureDate);
+        if (data.caregiver) document.getElementById("caregiver").value = data.caregiver;
       };
 
       /*
