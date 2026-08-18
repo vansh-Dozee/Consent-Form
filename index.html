@@ -767,6 +767,7 @@
 
       let modalDrawing = false;
       let hasSignature = false;
+      let savedSignatureDataUrl = null;
 
       // Default signature date to today YYYY-MM-DD if blank
       const sigDateEl = document.getElementById("signatureDate");
@@ -780,11 +781,6 @@
         const dpr = Math.max(window.devicePixelRatio || 1, 1);
         signatureCanvas.width = Math.round(rect.width * dpr);
         signatureCanvas.height = Math.round(rect.height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.lineWidth = 1.8;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.strokeStyle = "#111";
       }
 
       function resizeModalCanvas() {
@@ -810,18 +806,21 @@
         setTimeout(() => {
           resizeModalCanvas();
           clearModalCanvas();
-          if (hasSignature) {
+          // Load crisp original drawing if available
+          if (hasSignature && savedSignatureDataUrl) {
             const img = new Image();
             img.onload = () => {
               const rect = modalCanvas.getBoundingClientRect();
-              modalCtx.drawImage(img, 0, 0, rect.width, rect.height);
+              modalCtx.save();
+              modalCtx.setTransform(1, 0, 0, 1, 0, 0);
+              modalCtx.drawImage(img, 0, 0, modalCanvas.width, modalCanvas.height);
+              modalCtx.restore();
             };
-            img.src = signatureCanvas.toDataURL("image/png");
+            img.src = savedSignatureDataUrl;
           }
         }, 50);
       }
 
-      // Bind both pointerdown (touch) and click for mobile WebViews
       signatureCell.addEventListener("pointerdown", openSignatureModal);
       signatureCell.addEventListener("click", openSignatureModal);
       signatureCanvas.addEventListener("pointerdown", openSignatureModal);
@@ -858,8 +857,41 @@
       }
 
       function clearModalCanvas() {
-        const rect = modalCanvas.getBoundingClientRect();
-        modalCtx.clearRect(0, 0, rect.width, rect.height);
+        modalCtx.save();
+        modalCtx.setTransform(1, 0, 0, 1, 0, 0);
+        modalCtx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+        modalCtx.restore();
+      }
+
+      function renderSignatureToForm() {
+        if (!hasSignature || !savedSignatureDataUrl) return;
+        const img = new Image();
+        img.onload = () => {
+          ctx.save();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+
+          // Proportional aspect-ratio fit to prevent vertical/horizontal stretching
+          const imgAspect = img.width / img.height;
+          const canvasAspect = signatureCanvas.width / signatureCanvas.height;
+
+          let drawW = signatureCanvas.width;
+          let drawH = signatureCanvas.height;
+          let drawX = 0;
+          let drawY = 0;
+
+          if (imgAspect > canvasAspect) {
+            drawH = signatureCanvas.width / imgAspect;
+            drawY = (signatureCanvas.height - drawH) / 2;
+          } else {
+            drawW = signatureCanvas.height * imgAspect;
+            drawX = (signatureCanvas.width - drawW) / 2;
+          }
+
+          ctx.drawImage(img, drawX, drawY, drawW, drawH);
+          ctx.restore();
+        };
+        img.src = savedSignatureDataUrl;
       }
 
       modalCanvas.addEventListener("pointerdown", startModalDrawing);
@@ -880,16 +912,10 @@
 
       btnDone.addEventListener("click", (e) => {
         e.preventDefault();
-        const rect = signatureCanvas.getBoundingClientRect();
-        ctx.clearRect(0, 0, rect.width, rect.height);
-
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, rect.width, rect.height);
-          hasSignature = true;
-          signatureModal.classList.remove("open");
-        };
-        img.src = modalCanvas.toDataURL("image/png");
+        savedSignatureDataUrl = modalCanvas.toDataURL("image/png");
+        hasSignature = true;
+        renderSignatureToForm();
+        signatureModal.classList.remove("open");
       });
 
       function value(id) {
@@ -915,7 +941,7 @@
           physicianPhone: value("physicianPhone"),
           signatureDate: formatDateForDisplay(value("signatureDate")),
           caregiver: value("caregiver"),
-          signature: signatureCanvas.toDataURL("image/png"),
+          signature: savedSignatureDataUrl || signatureCanvas.toDataURL("image/png"),
           timestamp: new Date().toISOString()
         };
       }
@@ -984,7 +1010,7 @@
       };
 
       window.prepareForCapture = function () {
-        const sigData = signatureCanvas.toDataURL("image/png");
+        const sigData = savedSignatureDataUrl || signatureCanvas.toDataURL("image/png");
         document.body.classList.add("capture-mode");
 
         const wrap = signatureCanvas.parentElement;
