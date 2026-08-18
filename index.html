@@ -283,14 +283,13 @@
       display: grid;
       grid-template-columns: 1.65fr .75fr 1.65fr;
       border: 1px solid var(--line);
-      height: 67px;
+      height: 100px;
     }
 
     .signature-cell {
       position: relative;
       border-right: 1px solid var(--line);
       min-width: 0;
-      cursor: pointer;
     }
 
     .signature-cell:last-child {
@@ -304,7 +303,6 @@
       line-height: 1.05;
       font-weight: 700;
       white-space: nowrap;
-      pointer-events: none;
     }
 
     .signature-label .light {
@@ -315,45 +313,64 @@
       position: absolute;
       left: 6px;
       right: 6px;
-      bottom: 3px;
-      height: 37px;
-      cursor: pointer;
+      bottom: 6px;
+      height: 70px;
     }
 
     #signatureCanvas {
       width: 100%;
-      height: 37px;
+      height: 70px;
       display: block;
       touch-action: none;
+      cursor: crosshair;
+    }
+
+    .expand-sig-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9px;
+      font-weight: 600;
+      color: #444;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .capture-mode .expand-sig-btn {
+      display: none !important;
     }
 
     .date-input {
       position: absolute;
       left: 12%;
       right: 12%;
-      bottom: 6px;
-      height: 21px;
+      bottom: 12px;
+      height: 24px;
       border: 0;
       border-bottom: 1px solid #555;
       outline: 0;
       background: transparent;
       text-align: center;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .caregiver-input {
       position: absolute;
       left: 6px;
       right: 6px;
-      bottom: 5px;
-      height: 23px;
+      bottom: 12px;
+      height: 24px;
       border: 0;
       border-bottom: 1px solid #555;
       outline: 0;
       background: transparent;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 11px;
+      font-size: 12px;
     }
 
     /* ---------- Footer ---------- */
@@ -694,8 +711,9 @@
           <div class="signature-cell" id="signatureCell">
             <label class="signature-label">
               *PATIENT / AUTHORIZED REPRESENTATIVE SIGNATURE <br>
-              <span class="light">| OR VERBAL CONSENT (Tap to sign)</span>
+              <span class="light">| OR VERBAL CONSENT</span>
             </label>
+            <button class="expand-sig-btn" id="btnOpenModal" type="button">⤢ Expand</button>
 
             <div class="signature-canvas-wrap">
               <canvas id="signatureCanvas"></canvas>
@@ -757,14 +775,15 @@
       const signatureCanvas = document.getElementById("signatureCanvas");
       const ctx = signatureCanvas.getContext("2d");
 
-      const signatureCell = document.getElementById("signatureCell");
       const signatureModal = document.getElementById("signatureModal");
       const modalCanvas = document.getElementById("modalCanvas");
       const modalCtx = modalCanvas.getContext("2d");
+      const btnOpenModal = document.getElementById("btnOpenModal");
       const btnClear = document.getElementById("btnClear");
       const btnCancel = document.getElementById("btnCancel");
       const btnDone = document.getElementById("btnDone");
 
+      let formDrawing = false;
       let modalDrawing = false;
       let hasSignature = false;
       let savedSignatureDataUrl = null;
@@ -781,6 +800,11 @@
         const dpr = Math.max(window.devicePixelRatio || 1, 1);
         signatureCanvas.width = Math.round(rect.width * dpr);
         signatureCanvas.height = Math.round(rect.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#111";
       }
 
       function resizeModalCanvas() {
@@ -789,7 +813,7 @@
         modalCanvas.width = Math.round(rect.width * dpr);
         modalCanvas.height = Math.round(rect.height * dpr);
         modalCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        modalCtx.lineWidth = 2.5;
+        modalCtx.lineWidth = 2.8;
         modalCtx.lineCap = "round";
         modalCtx.lineJoin = "round";
         modalCtx.strokeStyle = "#111";
@@ -797,6 +821,48 @@
 
       resizeFormCanvas();
 
+      /* ---------- Direct Form Canvas Drawing ---------- */
+      function pointFromFormEvent(event) {
+        const rect = signatureCanvas.getBoundingClientRect();
+        const source = event.touches ? event.touches[0] : event;
+        return {
+          x: source.clientX - rect.left,
+          y: source.clientY - rect.top
+        };
+      }
+
+      function startFormDrawing(event) {
+        event.preventDefault();
+        formDrawing = true;
+        hasSignature = true;
+        const p = pointFromFormEvent(event);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }
+
+      function drawForm(event) {
+        if (!formDrawing) return;
+        event.preventDefault();
+        const p = pointFromFormEvent(event);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+
+      function stopFormDrawing() {
+        if (formDrawing) {
+          formDrawing = false;
+          ctx.closePath();
+          savedSignatureDataUrl = signatureCanvas.toDataURL("image/png");
+        }
+      }
+
+      signatureCanvas.addEventListener("pointerdown", startFormDrawing);
+      signatureCanvas.addEventListener("pointermove", drawForm);
+      signatureCanvas.addEventListener("pointerup", stopFormDrawing);
+      signatureCanvas.addEventListener("pointercancel", stopFormDrawing);
+      signatureCanvas.addEventListener("pointerleave", stopFormDrawing);
+
+      /* ---------- Modal Signature Support ---------- */
       function openSignatureModal(e) {
         if (e) {
           e.preventDefault();
@@ -806,7 +872,6 @@
         setTimeout(() => {
           resizeModalCanvas();
           clearModalCanvas();
-          // Load crisp original drawing if available
           if (hasSignature && savedSignatureDataUrl) {
             const img = new Image();
             img.onload = () => {
@@ -821,10 +886,8 @@
         }, 50);
       }
 
-      signatureCell.addEventListener("pointerdown", openSignatureModal);
-      signatureCell.addEventListener("click", openSignatureModal);
-      signatureCanvas.addEventListener("pointerdown", openSignatureModal);
-      signatureCanvas.addEventListener("click", openSignatureModal);
+      btnOpenModal.addEventListener("pointerdown", openSignatureModal);
+      btnOpenModal.addEventListener("click", openSignatureModal);
 
       function pointFromModalEvent(event) {
         const rect = modalCanvas.getBoundingClientRect();
@@ -871,7 +934,6 @@
           ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
 
-          // Proportional aspect-ratio fit to prevent vertical/horizontal stretching
           const imgAspect = img.width / img.height;
           const canvasAspect = signatureCanvas.width / signatureCanvas.height;
 
