@@ -281,7 +281,7 @@
 
     .signature-grid {
       display: grid;
-      grid-template-columns: 1.65fr .75fr 1.65fr;
+      grid-template-columns: 1.8fr 0.9fr 1.3fr;
       border: 1px solid var(--line);
       height: 100px;
     }
@@ -290,6 +290,7 @@
       position: relative;
       border-right: 1px solid var(--line);
       min-width: 0;
+      overflow: hidden;
       cursor: pointer;
     }
 
@@ -300,11 +301,11 @@
     .signature-label {
       display: block;
       padding: 5px 6px 0 6px;
-      font-size: 9px;
-      line-height: 1.05;
+      font-size: 8.5px;
+      line-height: 1.1;
       font-weight: 700;
-      white-space: nowrap;
       pointer-events: none;
+      overflow: hidden;
     }
 
     .signature-label .light {
@@ -318,6 +319,7 @@
       bottom: 6px;
       height: 70px;
       pointer-events: none;
+      overflow: hidden;
     }
 
     #signatureCanvas {
@@ -329,8 +331,8 @@
 
     .date-input {
       position: absolute;
-      left: 12%;
-      right: 12%;
+      left: 8%;
+      right: 8%;
       bottom: 12px;
       height: 24px;
       border: 0;
