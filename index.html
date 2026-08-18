@@ -76,6 +76,10 @@
 
     /* ---------- Section bars ---------- */
 
+    section {
+      margin-bottom: 18px;
+    }
+
     .section-bar {
       height: 24px;
       display: grid;
@@ -83,7 +87,7 @@
       align-items: center;
       background: var(--bar);
       color: #fff;
-      margin: 0;
+      margin: 0 0 10px 0;
     }
 
     .section-number {
@@ -106,9 +110,7 @@
     /* ---------- Patient information ---------- */
 
     .patient-grid {
-      border-left: 1px solid var(--line);
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
+      border: 1px solid var(--line);
       display: grid;
       grid-template-columns: 3fr 1.75fr 1.75fr;
     }
@@ -184,9 +186,7 @@
     .agreement-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      border-left: 1px solid var(--line);
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
+      border: 1px solid var(--line);
     }
 
     .agreement-column {
@@ -262,11 +262,11 @@
     /* ---------- Signature ---------- */
 
     .signature-section {
-      margin-top: 16px;
+      margin-top: 18px;
     }
 
     .signing-statement {
-      margin: 0 0 6px 0;
+      margin: 0 0 8px 0;
       font-size: 11px;
       line-height: 1.15;
     }
