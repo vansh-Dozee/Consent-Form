@@ -48,7 +48,7 @@
       max-width: 100%;
       min-height: auto;
       background: var(--paper);
-      padding: 16px 16px 80px 16px;
+      padding: 16px 16px 24px 16px;
       overflow: hidden;
       box-sizing: border-box;
     }
@@ -380,6 +380,24 @@
       text-align: center;
     }
 
+    /* ---------- Submit Button Flow ---------- */
+
+    .submit-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    #capture-button {
+      border: 0;
+      border-radius: 7px;
+      padding: 11px 22px;
+      background: #111;
+      color: #fff;
+      font: 600 13px Arial, Helvetica, sans-serif;
+      cursor: pointer;
+    }
+
     /* ---------- Fullscreen Signature Modal ---------- */
     #signatureModal {
       display: none;
@@ -458,20 +476,69 @@
     .btn-cancel { background: #f5f5f5; color: #666; }
     .btn-done { background: #050505; color: #fff; }
 
-    /* ---------- RN / capture support ---------- */
-
-    #capture-button {
+    /* ---------- Custom Alert Modal ---------- */
+    #customAlertModal {
+      display: none;
       position: fixed;
-      right: 14px;
-      bottom: 14px;
-      z-index: 100;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000000;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    #customAlertModal.open {
+      display: flex;
+    }
+
+    .custom-alert-box {
+      width: 90%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .custom-alert-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 12px;
+    }
+
+    .custom-alert-message {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.4;
+      margin-bottom: 20px;
+    }
+
+    .custom-alert-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .custom-alert-btn {
+      padding: 8px 22px;
+      border-radius: 6px;
       border: 0;
-      border-radius: 7px;
-      padding: 10px 14px;
       background: #111;
       color: #fff;
-      font: 600 13px Arial, Helvetica, sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
     }
+
+    /* ---------- RN / capture support ---------- */
 
     .capture-mode {
       background: #fff !important;
@@ -485,8 +552,10 @@
       padding: 16px 16px 30px 16px !important;
     }
 
+    .capture-mode .submit-wrap,
     .capture-mode #capture-button,
-    .capture-mode #signatureModal {
+    .capture-mode #signatureModal,
+    .capture-mode #customAlertModal {
       display: none !important;
     }
 
@@ -494,7 +563,7 @@
       html, body { background: #fff; }
       body { min-width: 0; }
       .page-wrap, #consent-form { width: 8.5in; min-height: 11in; height: 11in; }
-      #capture-button, #signatureModal { display: none !important; }
+      .submit-wrap, #capture-button, #signatureModal, #customAlertModal { display: none !important; }
       @page { size: Letter; margin: 0; }
     }
   </style>
@@ -727,6 +796,10 @@
 
       </section>
 
+      <div class="submit-wrap">
+        <button id="capture-button" type="button">Submit</button>
+      </div>
+
     </main>
   </div>
 
@@ -747,7 +820,15 @@
     </div>
   </div>
 
-  <button id="capture-button" type="button">Submit</button>
+  <div id="customAlertModal">
+    <div class="custom-alert-box">
+      <div class="custom-alert-title">The page says:</div>
+      <div class="custom-alert-message" id="customAlertMessage"></div>
+      <div class="custom-alert-actions">
+        <button class="custom-alert-btn" id="btnAlertOk" type="button">OK</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (() => {
@@ -764,11 +845,30 @@
       const btnCancel = document.getElementById("btnCancel");
       const btnDone = document.getElementById("btnDone");
 
+      const customAlertModal = document.getElementById("customAlertModal");
+      const customAlertMessage = document.getElementById("customAlertMessage");
+      const btnAlertOk = document.getElementById("btnAlertOk");
+
       let modalDrawing = false;
       let hasSignature = false;
+      let modalHasStrokes = false;
       let savedSignatureDataUrl = null;
 
-      // Default signature date to today YYYY-MM-DD if blank
+      function showAlert(message, focusId) {
+        customAlertMessage.textContent = message;
+        customAlertModal.classList.add("open");
+
+        function onOkClick() {
+          customAlertModal.classList.remove("open");
+          btnAlertOk.removeEventListener("click", onOkClick);
+          if (focusId) {
+            const targetEl = document.getElementById(focusId);
+            if (targetEl) targetEl.focus();
+          }
+        }
+        btnAlertOk.addEventListener("click", onOkClick);
+      }
+
       const sigDateEl = document.getElementById("signatureDate");
       if (sigDateEl && !sigDateEl.value) {
         const today = new Date().toISOString().split("T")[0];
@@ -807,6 +907,7 @@
           resizeModalCanvas();
           clearModalCanvas();
           if (hasSignature && savedSignatureDataUrl) {
+            modalHasStrokes = true;
             const img = new Image();
             img.onload = () => {
               modalCtx.save();
@@ -836,6 +937,7 @@
       function startModalDrawing(event) {
         event.preventDefault();
         modalDrawing = true;
+        modalHasStrokes = true;
         const p = pointFromModalEvent(event);
         modalCtx.beginPath();
         modalCtx.moveTo(p.x, p.y);
@@ -844,6 +946,7 @@
       function drawModal(event) {
         if (!modalDrawing) return;
         event.preventDefault();
+        modalHasStrokes = true;
         const p = pointFromModalEvent(event);
         modalCtx.lineTo(p.x, p.y);
         modalCtx.stroke();
@@ -859,6 +962,7 @@
         modalCtx.setTransform(1, 0, 0, 1, 0, 0);
         modalCtx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
         modalCtx.restore();
+        modalHasStrokes = false;
       }
 
       function renderSignatureToForm() {
@@ -909,6 +1013,13 @@
 
       btnDone.addEventListener("click", (e) => {
         e.preventDefault();
+
+        
+        if (!modalHasStrokes) {
+          showAlert("Please draw your signature before clicking Done.");
+          return;
+        }
+
         savedSignatureDataUrl = modalCanvas.toDataURL("image/png");
         hasSignature = true;
         renderSignatureToForm();
@@ -965,14 +1076,13 @@
 
         for (const [id, label] of required) {
           if (!value(id)) {
-            alert(`Please complete ${label}.`);
-            document.getElementById(id).focus();
+            showAlert(`Please complete ${label}.`, id);
             return;
           }
         }
 
         if (!hasSignature) {
-          alert("Please provide the patient / authorized representative signature.");
+          showAlert("Please provide the patient / authorized representative signature.");
           return;
         }
 
