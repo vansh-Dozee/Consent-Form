@@ -6,7 +6,19 @@
   <title>CAIT RPM Consent v4.0</title>
 
   <style>
-    * { box-sizing: border-box; }
+    * { 
+      box-sizing: border-box; 
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+
+    *::-webkit-scrollbar,
+    ::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+    }
 
     :root {
       --page-width: 816px;
@@ -29,6 +41,8 @@
       overflow-y: auto;
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
     }
 
     body {
@@ -540,8 +554,20 @@
 
     /* ---------- RN / capture support ---------- */
 
-    .capture-mode {
+    html.capture-mode,
+    body.capture-mode {
+      overflow: hidden !important;
       background: #fff !important;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+
+    html.capture-mode::-webkit-scrollbar,
+    body.capture-mode::-webkit-scrollbar,
+    .capture-mode *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
     .capture-mode .page-wrap,
@@ -560,7 +586,7 @@
     }
 
     @media print {
-      html, body { background: #fff; }
+      html, body { background: #fff; overflow: hidden; }
       body { min-width: 0; }
       .page-wrap, #consent-form { width: 8.5in; min-height: 11in; height: 11in; }
       .submit-wrap, #capture-button, #signatureModal, #customAlertModal { display: none !important; }
@@ -1014,7 +1040,6 @@
       btnDone.addEventListener("click", (e) => {
         e.preventDefault();
 
-        
         if (!modalHasStrokes) {
           showAlert("Please draw your signature before clicking Done.");
           return;
@@ -1118,6 +1143,7 @@
 
       window.prepareForCapture = function () {
         const sigData = savedSignatureDataUrl || signatureCanvas.toDataURL("image/png");
+        document.documentElement.classList.add("capture-mode");
         document.body.classList.add("capture-mode");
 
         const wrap = signatureCanvas.parentElement;
@@ -1157,6 +1183,7 @@
       };
 
       window.restoreAfterCapture = function () {
+        document.documentElement.classList.remove("capture-mode");
         document.body.classList.remove("capture-mode");
         signatureCanvas.style.opacity = "1";
         const img = document.getElementById("signatureCapturedImg");
