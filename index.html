@@ -13,14 +13,10 @@
     }
 
     *::-webkit-scrollbar,
-    ::-webkit-scrollbar,
-    html::-webkit-scrollbar,
-    body::-webkit-scrollbar {
+    ::-webkit-scrollbar {
       display: none !important;
       width: 0 !important;
       height: 0 !important;
-      opacity: 0 !important;
-      visibility: hidden !important;
       background: transparent !important;
     }
 
@@ -35,31 +31,40 @@
     }
 
     html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
       background: #fff;
       color: var(--ink);
       font-family: Arial, Helvetica, sans-serif;
       -webkit-text-size-adjust: 100%;
-      overflow-x: hidden;
-      overflow-y: auto;
-      touch-action: pan-y;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none !important;
-      -ms-overflow-style: none !important;
-    }
-
-    body {
-      min-width: 0;
-      width: 100%;
+      overflow: hidden !important;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
 
     .page-wrap {
       width: 100%;
-      max-width: 100%;
+      height: 100%;
       margin: 0 auto;
       padding: 0;
       background: #fff;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+
+    .page-wrap::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
     #consent-form {
@@ -68,7 +73,6 @@
       min-height: auto;
       background: #fff;
       padding: 16px 16px 24px 16px;
-      overflow: hidden;
       box-sizing: border-box;
     }
 
@@ -557,33 +561,23 @@
       cursor: pointer;
     }
 
-    /* ---------- RN / capture support ---------- */
+    /* ---------- Capture Mode Override ---------- */
 
     html.capture-mode,
-    body.capture-mode,
-    .capture-mode,
-    .capture-mode * {
-      overflow: hidden !important;
+    body.capture-mode {
+      position: static !important;
+      height: auto !important;
+      overflow: visible !important;
       background: #fff !important;
-      scrollbar-width: none !important;
-      -ms-overflow-style: none !important;
-      touch-action: none !important;
-      pointer-events: none !important;
     }
 
-    html.capture-mode::-webkit-scrollbar,
-    body.capture-mode::-webkit-scrollbar,
-    .capture-mode::-webkit-scrollbar,
-    .capture-mode *::-webkit-scrollbar {
-      display: none !important;
-      width: 0 !important;
-      height: 0 !important;
-      opacity: 0 !important;
-      visibility: hidden !important;
-      background: transparent !important;
+    .capture-mode .page-wrap {
+      position: static !important;
+      height: auto !important;
+      overflow: visible !important;
+      background: #fff !important;
     }
 
-    .capture-mode .page-wrap,
     .capture-mode #consent-form {
       width: 100% !important;
       max-width: 100% !important;
@@ -599,9 +593,9 @@
     }
 
     @media print {
-      html, body { background: #fff; overflow: hidden; }
-      body { min-width: 0; }
-      .page-wrap, #consent-form { width: 8.5in; min-height: 11in; height: 11in; }
+      html, body { position: static; height: auto; overflow: visible; background: #fff; }
+      .page-wrap { position: static; height: auto; overflow: visible; width: 8.5in; }
+      #consent-form { width: 8.5in; min-height: 11in; height: 11in; }
       .submit-wrap, #capture-button, #signatureModal, #customAlertModal { display: none !important; }
       @page { size: Letter; margin: 0; }
     }
@@ -873,6 +867,7 @@
     (() => {
       const form = document.getElementById("consent-form");
       const submitButton = document.getElementById("capture-button");
+      const pageWrap = document.querySelector(".page-wrap");
       const signatureCanvas = document.getElementById("signatureCanvas");
       const ctx = signatureCanvas.getContext("2d");
 
@@ -1124,10 +1119,8 @@
           return;
         }
 
-        // Scroll to top immediately to dismiss any scrollbar before snapshot capture
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
+        // Scroll internal container to top before posting
+        if (pageWrap) pageWrap.scrollTop = 0;
 
         postMessage({
           type: "FORM_COMPLETED",
@@ -1162,12 +1155,8 @@
       window.prepareForCapture = function () {
         const sigData = savedSignatureDataUrl || signatureCanvas.toDataURL("image/png");
 
-        // Instantly force scroll to top and lock overflow to destroy Android scrollbars
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-        document.documentElement.style.overflow = "hidden";
-        document.body.style.overflow = "hidden";
+        if (pageWrap) pageWrap.scrollTop = 0;
+
         document.documentElement.classList.add("capture-mode");
         document.body.classList.add("capture-mode");
 
@@ -1208,8 +1197,6 @@
       };
 
       window.restoreAfterCapture = function () {
-        document.documentElement.style.overflow = "";
-        document.body.style.overflow = "";
         document.documentElement.classList.remove("capture-mode");
         document.body.classList.remove("capture-mode");
         signatureCanvas.style.opacity = "1";
