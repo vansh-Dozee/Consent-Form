@@ -848,6 +848,7 @@
     </div>
   </div>
 
+  <!-- Custom Alert Modal (Clean message only) -->
   <div id="customAlertModal">
     <div class="custom-alert-box">
       <div class="custom-alert-message" id="customAlertMessage"></div>
@@ -924,14 +925,26 @@
 
       resizeFormCanvas();
 
+      function clearModalCanvas() {
+        modalCtx.save();
+        modalCtx.setTransform(1, 0, 0, 1, 0, 0);
+        modalCtx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+        modalCtx.restore();
+        modalHasStrokes = false;
+      }
+
       /* ---------- Tap Cell to Open Modal ---------- */
       function openSignatureModal(e) {
         if (e) {
           e.preventDefault();
           e.stopPropagation();
         }
+
+        clearModalCanvas();
+
         signatureModal.classList.add("open");
-        setTimeout(() => {
+
+        requestAnimationFrame(() => {
           resizeModalCanvas();
           clearModalCanvas();
           if (hasSignature && savedSignatureDataUrl) {
@@ -944,8 +957,10 @@
               modalCtx.restore();
             };
             img.src = savedSignatureDataUrl;
+          } else {
+            modalHasStrokes = false;
           }
-        }, 50);
+        });
       }
 
       signatureCell.addEventListener("pointerdown", openSignatureModal);
@@ -983,14 +998,6 @@
       function stopModalDrawing() {
         modalDrawing = false;
         modalCtx.closePath();
-      }
-
-      function clearModalCanvas() {
-        modalCtx.save();
-        modalCtx.setTransform(1, 0, 0, 1, 0, 0);
-        modalCtx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
-        modalCtx.restore();
-        modalHasStrokes = false;
       }
 
       function renderSignatureToForm() {
@@ -1036,6 +1043,7 @@
 
       btnCancel.addEventListener("click", (e) => {
         e.preventDefault();
+        clearModalCanvas();
         signatureModal.classList.remove("open");
       });
 
