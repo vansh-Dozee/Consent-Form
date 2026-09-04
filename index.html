@@ -30,6 +30,7 @@
       --screen: #fff;
     }
 
+    /* Lock root WebView from scrolling to completely disable Android native scrollbars */
     html, body {
       width: 100%;
       height: 100%;
@@ -47,6 +48,7 @@
       bottom: 0;
     }
 
+    /* Internal scroll container */
     .page-wrap {
       width: 100%;
       height: 100%;
@@ -522,26 +524,19 @@
 
     .custom-alert-box {
       width: 90%;
-      max-width: 420px;
+      max-width: 380px;
       background: #fff;
       border-radius: 8px;
-      padding: 20px 24px;
+      padding: 22px 24px 18px 24px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.3);
       display: flex;
       flex-direction: column;
     }
 
-    .custom-alert-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #111;
-      margin-bottom: 12px;
-    }
-
     .custom-alert-message {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.4;
+      font-size: 14.5px;
+      color: #222;
+      line-height: 1.45;
       margin-bottom: 20px;
     }
 
@@ -855,7 +850,6 @@
 
   <div id="customAlertModal">
     <div class="custom-alert-box">
-      <div class="custom-alert-title">The page says:</div>
       <div class="custom-alert-message" id="customAlertMessage"></div>
       <div class="custom-alert-actions">
         <button class="custom-alert-btn" id="btnAlertOk" type="button">OK</button>
