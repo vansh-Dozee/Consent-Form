@@ -902,14 +902,12 @@
         }
       }
 
-      /* Auto-Dismiss Keyboard When Scrolling the form */
-      if (pageWrap) {
-        pageWrap.addEventListener("scroll", () => {
-          if (document.activeElement && document.activeElement.tagName === "INPUT") {
-            dismissKeyboard();
-          }
-        }, { passive: true });
-      }
+      /* Dismiss keyboard whenever touching outside inputs (e.g. scrolling, tapping agreement text or signature) */
+      document.addEventListener("pointerdown", (e) => {
+        if (e.target && e.target.tagName !== "INPUT" && !e.target.closest("input")) {
+          dismissKeyboard();
+        }
+      });
 
       /* Helper for instant 0ms tap response without Android synthetic click lag/swallow */
       function addInstantTapListener(element, callback) {
