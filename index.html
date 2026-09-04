@@ -895,19 +895,12 @@
       let modalHasStrokes = false;
       let savedSignatureDataUrl = null;
 
-      /* Helper to dismiss virtual keyboard if an input is active */
-      function dismissKeyboard() {
+      /* Helper to blur any currently focused text input */
+      function dismissActiveInput() {
         if (document.activeElement && typeof document.activeElement.blur === "function") {
           document.activeElement.blur();
         }
       }
-
-      /* Dismiss keyboard whenever touching outside inputs (e.g. scrolling, tapping agreement text or signature) */
-      document.addEventListener("pointerdown", (e) => {
-        if (e.target && e.target.tagName !== "INPUT" && !e.target.closest("input")) {
-          dismissKeyboard();
-        }
-      });
 
       /* Helper for instant 0ms tap response without Android synthetic click lag/swallow */
       function addInstantTapListener(element, callback) {
@@ -931,7 +924,7 @@
       }
 
       function showAlert(message, focusId) {
-        dismissKeyboard();
+        dismissActiveInput();
         customAlertMessage.textContent = message;
         customAlertModal.classList.add("open");
 
@@ -984,8 +977,8 @@
 
       /* ---------- Tap Cell to Open Modal ---------- */
       function openSignatureModal(e) {
-        // 1. Immediately dismiss virtual keyboard so modal gets full screen
-        dismissKeyboard();
+        // Direct fix: Explicitly blur any active text input so keyboard dismisses immediately
+        dismissActiveInput();
 
         if (e) {
           e.preventDefault();
@@ -1148,7 +1141,7 @@
       }
 
       function submit() {
-        dismissKeyboard();
+        dismissActiveInput();
 
         const required = [
           ["patientName", "*PATIENT NAME"],
@@ -1203,7 +1196,7 @@
       };
 
       window.prepareForCapture = function () {
-        dismissKeyboard();
+        dismissActiveInput();
         const sigData = savedSignatureDataUrl || signatureCanvas.toDataURL("image/png");
 
         if (pageWrap) pageWrap.scrollTop = 0;
