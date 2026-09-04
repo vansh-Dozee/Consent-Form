@@ -421,6 +421,10 @@
       color: #fff;
       font: 600 13px Arial, Helvetica, sans-serif;
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     /* ---------- Fullscreen Signature Modal ---------- */
@@ -495,6 +499,10 @@
       font-weight: 600;
       font-size: 13px;
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .btn-clear { background: #e0e0e0; color: #333; }
@@ -554,6 +562,10 @@
       font-weight: 600;
       font-size: 13px;
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     /* ---------- Capture Mode Override ---------- */
@@ -883,19 +895,39 @@
       let modalHasStrokes = false;
       let savedSignatureDataUrl = null;
 
+      /* Helper for instant 0ms tap response without Android synthetic click lag/swallow */
+      function addInstantTapListener(element, callback) {
+        if (!element) return;
+        let lastTriggered = 0;
+
+        function handleAction(e) {
+          const now = Date.now();
+          if (now - lastTriggered < 250) return;
+          lastTriggered = now;
+
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          callback(e);
+        }
+
+        element.addEventListener("pointerdown", handleAction);
+        element.addEventListener("click", handleAction);
+      }
+
       function showAlert(message, focusId) {
         customAlertMessage.textContent = message;
         customAlertModal.classList.add("open");
 
         function onOkClick() {
           customAlertModal.classList.remove("open");
-          btnAlertOk.removeEventListener("click", onOkClick);
           if (focusId) {
             const targetEl = document.getElementById(focusId);
             if (targetEl) targetEl.focus();
           }
         }
-        btnAlertOk.addEventListener("click", onOkClick);
+        addInstantTapListener(btnAlertOk, onOkClick);
       }
 
       const sigDateEl = document.getElementById("signatureDate");
@@ -926,9 +958,11 @@
       resizeFormCanvas();
 
       function clearModalCanvas() {
+        modalDrawing = false;
         modalCtx.save();
         modalCtx.setTransform(1, 0, 0, 1, 0, 0);
         modalCtx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+        modalCtx.beginPath();
         modalCtx.restore();
         modalHasStrokes = false;
       }
@@ -941,7 +975,6 @@
         }
 
         clearModalCanvas();
-
         signatureModal.classList.add("open");
 
         requestAnimationFrame(() => {
@@ -963,10 +996,8 @@
         });
       }
 
-      signatureCell.addEventListener("pointerdown", openSignatureModal);
-      signatureCell.addEventListener("click", openSignatureModal);
-      signatureCanvas.addEventListener("pointerdown", openSignatureModal);
-      signatureCanvas.addEventListener("click", openSignatureModal);
+      addInstantTapListener(signatureCell, openSignatureModal);
+      addInstantTapListener(signatureCanvas, openSignatureModal);
 
       function pointFromModalEvent(event) {
         const rect = modalCanvas.getBoundingClientRect();
@@ -1036,20 +1067,17 @@
       modalCanvas.addEventListener("pointercancel", stopModalDrawing);
       modalCanvas.addEventListener("pointerleave", stopModalDrawing);
 
-      btnClear.addEventListener("click", (e) => {
-        e.preventDefault();
+      /* Instant Action Buttons */
+      addInstantTapListener(btnClear, () => {
         clearModalCanvas();
       });
 
-      btnCancel.addEventListener("click", (e) => {
-        e.preventDefault();
+      addInstantTapListener(btnCancel, () => {
         clearModalCanvas();
         signatureModal.classList.remove("open");
       });
 
-      btnDone.addEventListener("click", (e) => {
-        e.preventDefault();
-
+      addInstantTapListener(btnDone, () => {
         if (!modalHasStrokes) {
           showAlert("Please draw your signature before clicking Done.");
           return;
@@ -1207,7 +1235,7 @@
         postMessage({ type: "CAPTURE_RESTORED" });
       };
 
-      submitButton.addEventListener("click", submit);
+      addInstantTapListener(submitButton, submit);
       window.submitConsentForm = submit;
       document.addEventListener("submit", e => e.preventDefault());
 
