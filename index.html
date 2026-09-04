@@ -895,6 +895,22 @@
       let modalHasStrokes = false;
       let savedSignatureDataUrl = null;
 
+      /* Helper to dismiss virtual keyboard if an input is active */
+      function dismissKeyboard() {
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+          document.activeElement.blur();
+        }
+      }
+
+      /* Auto-Dismiss Keyboard When Scrolling the form */
+      if (pageWrap) {
+        pageWrap.addEventListener("scroll", () => {
+          if (document.activeElement && document.activeElement.tagName === "INPUT") {
+            dismissKeyboard();
+          }
+        }, { passive: true });
+      }
+
       /* Helper for instant 0ms tap response without Android synthetic click lag/swallow */
       function addInstantTapListener(element, callback) {
         if (!element) return;
@@ -917,6 +933,7 @@
       }
 
       function showAlert(message, focusId) {
+        dismissKeyboard();
         customAlertMessage.textContent = message;
         customAlertModal.classList.add("open");
 
@@ -969,6 +986,9 @@
 
       /* ---------- Tap Cell to Open Modal ---------- */
       function openSignatureModal(e) {
+        // 1. Immediately dismiss virtual keyboard so modal gets full screen
+        dismissKeyboard();
+
         if (e) {
           e.preventDefault();
           e.stopPropagation();
@@ -1130,6 +1150,8 @@
       }
 
       function submit() {
+        dismissKeyboard();
+
         const required = [
           ["patientName", "*PATIENT NAME"],
           ["dob", "*DATE OF BIRTH"],
@@ -1183,6 +1205,7 @@
       };
 
       window.prepareForCapture = function () {
+        dismissKeyboard();
         const sigData = savedSignatureDataUrl || signatureCanvas.toDataURL("image/png");
 
         if (pageWrap) pageWrap.scrollTop = 0;
